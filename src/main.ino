@@ -59,7 +59,7 @@ void commandRead(JsonObject *input, JsonWriter *output){
     for (int i = 0; i < m.getTotalDevices(); i++) {
         device = m.getDevice(i);
         output->beginObject()
-          .property("name", device->getName());
+          .property("name", (char *)device->getName());
         if (device->multipleValues()) {
           int totalValues = device->getValues(multipleValues);
           output->
@@ -79,9 +79,6 @@ void commandRead(JsonObject *input, JsonWriter *output){
         output->endObject();
     }
     output->endArray();
-    //Fix this bug in JsonWriter, when array is empty no separator is printed
-    if(m.getTotalDevices() == 0)
-      output->separator();
 }
 
 void commandInfo(JsonObject *input, JsonWriter *output){
@@ -112,9 +109,9 @@ void setup() {
   // put your setup code here, to run once:
 
   Serial.begin(115200);
-  //Voltmeter
-  VoltmeterDevice *voltmeter = new VoltmeterDevice(BATTERY_MONITOR_PIN, BATTERY_MONITOR_R1, BATTERY_MONITOR_R2, BATTERY_MONITOR_VOLTAGE_REFERENCE);
-  m.addDevice(voltmeter);
+  m.addDevice(new INA219Device());
+  m.addDevice(new DHTDevice(6, DHT21));
+  m.addDevice(new DHTDevice(9, DHT11));
 
 
 }
@@ -169,6 +166,7 @@ void loop() {
             }
 
             serialJsonWriter.endObject();
+            Serial.print("\n");
         }
     }
 }
