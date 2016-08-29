@@ -83,14 +83,29 @@ void commandRead(JsonObject *input, JsonWriter *output){
 
 void commandInfo(JsonObject *input, JsonWriter *output){
     // Display sensor information
+    char buffer[30];
     Device *device;
     output->beginArray("data");
+    int quantities[10];
 
     for (int i = 0; i < m.getTotalDevices(); i++) {
         device = m.getDevice(i);
+        int totalValues = device->getSensorQuantities(quantities);
+
         output->beginObject()
-          .property(device->getName(), (char *)device->getSensorType())
-        .endObject();
+          .property("name", (char *)device->getName())
+          .property("sensor", (char *)device->getSensorType())
+          .beginArray("quantities");
+
+            for(int j = 0; j < totalValues; j++){
+              strcpy_P(buffer, (char*)pgm_read_word(&(quantities_table[quantities[j]])));
+                output->beginObject()
+                   .property("id", quantities[j])
+                   .property("name", buffer)
+                .endObject();
+            }
+
+        output->endArray().endObject();
 
     }
     output->endArray();
