@@ -86,11 +86,11 @@ void commandInfo(JsonObject *input, JsonWriter *output){
     char buffer[30];
     Device *device;
     output->beginArray("data");
-    int quantities[10];
+    int units[10];
 
     for (int i = 0; i < m.getTotalDevices(); i++) {
         device = m.getDevice(i);
-        int totalValues = device->getSensorQuantities(quantities);
+        int totalValues = device->getSensorUnits(units);
 
         output->beginObject()
           .property("name", (char *)device->getName())
@@ -98,9 +98,9 @@ void commandInfo(JsonObject *input, JsonWriter *output){
           .beginArray("quantities");
 
             for(int j = 0; j < totalValues; j++){
-              strcpy_P(buffer, (char*)pgm_read_word(&(quantities_table[quantities[j]])));
+              strcpy_P(buffer, (char*)pgm_read_word(&(units_table[units[j]])));
                 output->beginObject()
-                   .property("id", quantities[j])
+                   .property("id", units[j])
                    .property("name", buffer)
                 .endObject();
             }
