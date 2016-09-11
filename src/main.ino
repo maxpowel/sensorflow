@@ -13,6 +13,7 @@
 #include <VoltMeter.h>
 #include <Multiplexer.h>
 #include <SensorMonitor.h>
+#include "EEPROMConfig.h"
 
 
 /************************/
@@ -22,14 +23,19 @@
 JsonWriter serialJsonWriter(&Serial);
 
 SensorMonitor m;
+bool reset = false;
+
+void software_Reset(){
+  asm volatile ("jmp 0");
+}
 
 /************************/
 /* ds18b20 Sensors      */
 /************************/
 // I have some issues if this is not created here
-OneWire oneWire(SENSOR_ONE_WIRE_BUS);
+//OneWire oneWire(SENSOR_ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
-DallasTemperature sensors(&oneWire);
+//DallasTemperature sensors(&oneWire);
 
 
 struct Command {
@@ -47,6 +53,24 @@ void commandStatus(JsonObject *input, JsonWriter *output){
       .beginObject("memory")
         .property("available", freeMemory())
       .endObject()
+    .endObject();
+}
+
+void writeConfig(JsonObject *input, JsonWriter *output){
+  int dataSize = (*input)["dataSize"];
+  int totalSensors = (*input)["totalSensors"];
+  EEPROMConfig config;
+  struct ConfigurationInfo conf = config.conf;
+  conf.totalSensors = totalSensors;
+  reset = true;
+  config.writeConfig(conf);
+  config.writeSensorConfig(&Serial, dataSize);
+
+    // Display sensor information
+    output->
+    beginObject("data")
+      .property("status", "ok")
+      .property("read", dataSize)
     .endObject();
 }
 
@@ -94,7 +118,7 @@ void commandInfo(JsonObject *input, JsonWriter *output){
 
         output->beginObject()
           .property("name", (char *)device->getName())
-          .property("sensor", (char *)device->getSensorType())
+          //.property("sensor", (char *)device->getSensorType())
           .beginArray("quantities");
 
             for(int j = 0; j < totalValues; j++){
@@ -112,22 +136,56 @@ void commandInfo(JsonObject *input, JsonWriter *output){
 }
 
 
-#define TOTAL_COMMANDS 3
+#define TOTAL_COMMANDS 4
 const struct Command commandList[TOTAL_COMMANDS] = {
         {"read", commandRead},
         {"status", commandStatus},
-        {"info", commandInfo}
+        {"info", commandInfo},
+        {"writeConfig", writeConfig}
 };
 
+
+struct AvailableDevice {
+    char *sensorType;
+    Device* (*fun)(void *data);
+};
+
+const struct AvailableDevice availableDeviceList[] = {
+  {DallasTemperatureDevice::getSensorType(), DallasTemperatureDevice::fromConfig}
+};
+
+#define TOTAL_AVAILABLE_DEVICES sizeof(availableDeviceList)/sizeof(AvailableDevice)
+
+Device *dt;
+
+
+
+bool cagao(char *name, byte *data, size_t dataSize) {
+  bool found=false;
+  for(int i = 0; i < TOTAL_AVAILABLE_DEVICES && !found; i++){
+    if(strcmp(availableDeviceList[i].sensorType, name) == 0){
+      found = true;
+
+      m.addDevice(availableDeviceList[i].fun(data));
+    }
+  }
+  return found;
+}
 
 void setup() {
   // put your setup code here, to run once:
 
-  Serial.begin(115200);
+  /*Serial.begin(115200);
   m.addDevice(new INA219Device());
   m.addDevice(new DHTDevice(6, DHT21));
   m.addDevice(new DHTDevice(9, DHT11));
+*/
+  Serial.begin(115200);
+  EEPROMConfig config;
 
+  if(config.loadConfig()) {
+    config.loadSensors(cagao);
+  }
 
 }
 
@@ -138,6 +196,49 @@ char readBuffer[JSON_READ_BUFFER];
 int pairingLeft = 0;
 char bufferPosition = 0;
 void loop() {
+  if(reset) {
+    software_Reset();
+    reset = false;
+  }
+  /*
+  byte buffer[255];
+  buffer[0] = 'D';
+  buffer[1] = 'S';
+  buffer[2] = '1';
+  buffer[3] = '8';
+  buffer[4] = 'B';
+  buffer[5] = '2';
+  buffer[6] = '0';
+  buffer[7] = 0;
+  buffer[8] = 8;
+  buffer[9] = 0x28;
+  buffer[10] = 0xFF;
+  buffer[11] = 0x10;
+  buffer[12] = 0x93;
+  buffer[13] = 0x6F;
+  buffer[14] = 0x14;
+  buffer[15] = 0x4;
+  buffer[16] = 0x11;
+
+  buffer[17] = 'D';
+  buffer[18] = 'S';
+  buffer[19] = '1';
+  buffer[29] = '8';
+  buffer[21] = 'B';
+  buffer[22] = '2';
+  buffer[23] = '0';
+  buffer[24] = 0;
+  buffer[25] = 8;
+  buffer[26] = 1;
+  buffer[27] = 2;
+  buffer[28] = 3;
+  buffer[29] = 4;
+  buffer[30] = 5;
+  buffer[31] = 6;
+  buffer[32] = 7;
+  buffer[33] = 8;
+
+*/
 
     while(Serial.available()){
         char c = Serial.read();
@@ -182,6 +283,7 @@ void loop() {
 
             serialJsonWriter.endObject();
             Serial.print("\n");
+            Serial.flush();
         }
     }
 }
