@@ -25,18 +25,9 @@ JsonWriter serialJsonWriter(&Serial);
 SensorMonitor m;
 bool reset = false;
 
-void software_Reset(){
+void softwareReset(){
   asm volatile ("jmp 0");
 }
-
-/************************/
-/* ds18b20 Sensors      */
-/************************/
-// I have some issues if this is not created here
-//OneWire oneWire(SENSOR_ONE_WIRE_BUS);
-// Pass our oneWire reference to Dallas Temperature.
-//DallasTemperature sensors(&oneWire);
-
 
 struct Command {
     char  command[20];
@@ -110,11 +101,11 @@ void commandInfo(JsonObject *input, JsonWriter *output){
     char buffer[30];
     Device *device;
     output->beginArray("data");
-    int units[10];
+    int quantities[10];
 
     for (int i = 0; i < m.getTotalDevices(); i++) {
         device = m.getDevice(i);
-        int totalValues = device->getSensorUnits(units);
+        int totalValues = device->getSensorQuantities(quantities);
 
         output->beginObject()
           .property("name", (char *)device->getName())
@@ -122,9 +113,9 @@ void commandInfo(JsonObject *input, JsonWriter *output){
           .beginArray("quantities");
 
             for(int j = 0; j < totalValues; j++){
-              strcpy_P(buffer, (char*)pgm_read_word(&(units_table[units[j]])));
+              strcpy_P(buffer, (char*)pgm_read_word(&(quantities_table[quantities[j]])));
                 output->beginObject()
-                   .property("id", units[j])
+                   .property("id", quantities[j])
                    .property("name", buffer)
                 .endObject();
             }
@@ -197,7 +188,7 @@ int pairingLeft = 0;
 char bufferPosition = 0;
 void loop() {
   if(reset) {
-    software_Reset();
+    softwareReset();
     reset = false;
   }
   /*
@@ -247,13 +238,15 @@ void loop() {
             pairingLeft++;
         } else if (c == '}') {
             pairingLeft--;
+        } else if(pairingLeft == 0){
+          //Ping request
+          Serial.write(c+1);
+          Serial.print("PONG");
+          Serial.print('\n');
+          return;
         }
         readBuffer[bufferPosition] = c;
         bufferPosition++;
-
-        /*if (bufferPosition > JSON_READ_BUFFER){
-            Serial.println("Parse error");
-        }*/
 
         if(pairingLeft == 0 && bufferPosition > 0){
             //Json message found!

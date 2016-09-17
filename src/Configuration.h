@@ -8,7 +8,7 @@
 #define BATTERY_MONITOR_VOLTAGE_REFERENCE 4.7
 
 // Temperature probe ds18b20
-#define SENSOR_ONE_WIRE_BUS 2
+#define SENSOR_ONE_WIRE_BUS 3
 
 // Temperature and humidity sensors
 #define DHTTYPE DHT11
