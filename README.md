@@ -5,7 +5,7 @@ This sketch will convert your Arduino into a sensorflow device
 
 About Sensorflow
 ----------------
-This library is an sensor plug and play for Arduino.
+This library is a sensor plug and play for Arduino.
 There are a lot of sensors and every sensor has it own library. If you have a lot of sensors,
 you will have tons of initizalization and configuration code. And every of these sensors has
 a different way to use so you need write different code for every one of these sensors. That
@@ -16,8 +16,8 @@ Sensorflow tries to solve this problem. There is a Device interface that provide
 this minimal configuration data and thats all, in one line you have your sensor working!.
 
 Now you can use you sensors or register in a sensor respository (like a set of sensors) and apply
-bulk task (like read all sensors) or request stored sensors by id. In this step you reduced the
-complexity of multiple object interface (one per sensor) to only one, the Device interface.
+bulk tasks (like read all sensors) or request stored sensors by id. In this step you reduced the
+complexity of multiple object interface (one per sensor) to only one, the sensorflow Device interface.
 
 Why sensorflow
 --------------
@@ -62,7 +62,7 @@ void loop(void)
 
 }
 ```
-I only want to read the sensors (same action) but those sensor works completely different. You have to deal with
+I only want to read the sensors (same action) but those sensors work completely different. You have to deal with
 multiple object types and use every one in a different way. Add any other sensor type will change completely
 your program. This is a problem. Now compare with the sensorflow code.
 
@@ -78,7 +78,7 @@ SensorMonitor m;
 
 void setup() {
   Serial.begin(9600);
-  DeviceAddress address =  { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+  DeviceAddress address = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
   Device *ds = new DallasTemperatureDevice(address);
   Device *dht = DHTDevice(3, DHT22);
   Device *bh = new BH1750Device();
@@ -111,6 +111,6 @@ The installation process is:
 * Configure sensors using a friendly interface (or from file)
 * Ship to your client
 
-If you connect or remove sensors, just connect it to your computer and update the configuration. Forget about writing arduino code when you dont have to!
+If you connect or remove sensors, just connect it to your computer and update the configuration (you could even do it from remote if that computer is connected to internet). Forget about writing arduino code when you dont have to!
 
-Now you can focus on your objetive that is fetch sensor data and process/store.
+Now you can focus on your objetive that is fetch sensor data and process/store it.
