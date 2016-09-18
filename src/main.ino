@@ -137,12 +137,14 @@ const struct Command commandList[TOTAL_COMMANDS] = {
 
 
 struct AvailableDevice {
-    char *sensorType;
+    const char *sensorType;
     Device* (*fun)(void *data);
 };
 
 const struct AvailableDevice availableDeviceList[] = {
-  {DallasTemperatureDevice::getSensorType(), DallasTemperatureDevice::fromConfig}
+  {DallasTemperatureDevice::getSensorType(), DallasTemperatureDevice::fromConfig},
+  {INA219Device::getSensorType(), INA219Device::fromConfig},
+  {DHTDevice::getSensorType(), DHTDevice::fromConfig}
 };
 
 #define TOTAL_AVAILABLE_DEVICES sizeof(availableDeviceList)/sizeof(AvailableDevice)
@@ -164,7 +166,6 @@ bool cagao(char *name, byte *data, size_t dataSize) {
 }
 
 void setup() {
-  // put your setup code here, to run once:
 
   /*Serial.begin(115200);
   m.addDevice(new INA219Device());
@@ -191,45 +192,6 @@ void loop() {
     softwareReset();
     reset = false;
   }
-  /*
-  byte buffer[255];
-  buffer[0] = 'D';
-  buffer[1] = 'S';
-  buffer[2] = '1';
-  buffer[3] = '8';
-  buffer[4] = 'B';
-  buffer[5] = '2';
-  buffer[6] = '0';
-  buffer[7] = 0;
-  buffer[8] = 8;
-  buffer[9] = 0x28;
-  buffer[10] = 0xFF;
-  buffer[11] = 0x10;
-  buffer[12] = 0x93;
-  buffer[13] = 0x6F;
-  buffer[14] = 0x14;
-  buffer[15] = 0x4;
-  buffer[16] = 0x11;
-
-  buffer[17] = 'D';
-  buffer[18] = 'S';
-  buffer[19] = '1';
-  buffer[29] = '8';
-  buffer[21] = 'B';
-  buffer[22] = '2';
-  buffer[23] = '0';
-  buffer[24] = 0;
-  buffer[25] = 8;
-  buffer[26] = 1;
-  buffer[27] = 2;
-  buffer[28] = 3;
-  buffer[29] = 4;
-  buffer[30] = 5;
-  buffer[31] = 6;
-  buffer[32] = 7;
-  buffer[33] = 8;
-
-*/
 
     while(Serial.available()){
         char c = Serial.read();

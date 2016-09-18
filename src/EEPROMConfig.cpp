@@ -63,12 +63,23 @@ int EEPROMConfig::loadSensors(bool (*loader)(char *name, byte *data, size_t data
   byte data[255];
   int dataPosition = sizeof(ConfigurationInfo);
 
-  int offset = 0;
-  for(unsigned int i = 0; i < conf.totalSensors; i++) {
+  /*************************/
+  /*sensorData iteration 0         Sensor data iteration 1
+   *      ^                        ^
+   *      |                        |
+    data: ds18b2008ffaaffaaffaaffaadht021114
+    The sensorData variable points to the position where the sensor data begins.
+    The offset variable is the index relative to every sensor data position
 
+  */
+  //Position where the actual sensor data starts
+  int sensorDataStart = 0;
+  for(unsigned int i = 0; i < conf.totalSensors; i++) {
+    // Relative position of the data of the actual sensor
+    int offset = 0;
     //Read sensor type
-    while(EEPROM[dataPosition + offset] != 0 && offset < 50) {
-        sensorType[offset] = EEPROM[dataPosition + offset];
+    while(EEPROM[dataPosition + sensorDataStart + offset] != 0 && offset < 50) {
+        sensorType[offset] = EEPROM[dataPosition + sensorDataStart + offset];
         offset++;
     }
 
@@ -80,11 +91,11 @@ int EEPROMConfig::loadSensors(bool (*loader)(char *name, byte *data, size_t data
       offset++;
       // Load the data size which is the next element
 
-      int dataSize = EEPROM[dataPosition + offset];
+      int dataSize = EEPROM[dataPosition + sensorDataStart + offset];
       offset++;
       // Now read the data for initialize the sensor
       for (int i=0; i <dataSize; i++){
-        data[i] = EEPROM[dataPosition + offset + i];
+        data[i] = EEPROM[dataPosition + sensorDataStart + offset + i];
       }
       offset += dataSize;
       // At this point we have the sensor type and the parameters to initialize this sensor
@@ -93,6 +104,7 @@ int EEPROMConfig::loadSensors(bool (*loader)(char *name, byte *data, size_t data
         totalLoaded++;
       }
     }
+    sensorDataStart += offset;
   }
 
   return totalLoaded;
