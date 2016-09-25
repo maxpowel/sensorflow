@@ -67,6 +67,39 @@ void writeConfig(JsonObject *input, JsonWriter *output){
 
 void commandRead(JsonObject *input, JsonWriter *output){
     float multipleValues[10];
+    int quantities[10];
+    char quantityName[20];
+    Device *device;
+    output->
+    beginArray("data");
+    for (int i = 0; i < m.getTotalDevices(); i++) {
+        device = m.getDevice(i);
+        device->getSensorQuantities(quantities);
+        if (device->multipleValues()) {
+          int totalValues = device->getValues(multipleValues);
+          for (int j = 0; j < totalValues; j++) {
+            strcpy_P(quantityName, (char*)pgm_read_word(&(quantities_table[quantities[j]])));
+            output->beginObject()
+              .property("name", (char *)device->getName())
+              .property("value", multipleValues[j])
+              .property("quantity", quantityName)
+              .endObject();
+          }
+        } else {
+          strcpy_P(quantityName, (char*)pgm_read_word(&(quantities_table[quantities[0]])));
+          output->beginObject()
+            .property("name", (char *)device->getName())
+            .property("value", device->getValue())
+            .property("quantity", quantityName)
+            .endObject();
+        }
+
+    }
+    output->endArray();
+}
+
+void commandCompactRead(JsonObject *input, JsonWriter *output){
+    float multipleValues[10];
     Device *device;
     output->
     beginArray("data");
@@ -77,19 +110,15 @@ void commandRead(JsonObject *input, JsonWriter *output){
           .property("name", (char *)device->getName());
         if (device->multipleValues()) {
           int totalValues = device->getValues(multipleValues);
-          output->
-            property("multiple", true)
-            .property("total", totalValues)
-            .beginArray("values");
-
+          output->beginArray("values");
             for (int j = 0; j < totalValues; j++) {
               output->number(multipleValues[j]);
             }
           output->endArray();
         } else {
-          output->
-            property("multiple", false)
-            .property("value", device->getValue());
+          output->beginArray("values")
+            .number(device->getValue())
+            .endArray();
         }
         output->endObject();
     }
@@ -127,13 +156,14 @@ void commandInfo(JsonObject *input, JsonWriter *output){
 }
 
 
-#define TOTAL_COMMANDS 4
-const struct Command commandList[TOTAL_COMMANDS] = {
+const struct Command commandList[] = {
         {"read", commandRead},
+        {"cread", commandCompactRead},
         {"status", commandStatus},
         {"info", commandInfo},
         {"writeConfig", writeConfig}
 };
+#define TOTAL_COMMANDS sizeof(commandList)/sizeof(Command)
 
 
 struct AvailableDevice {
